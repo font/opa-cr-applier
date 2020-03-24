@@ -1,0 +1,24 @@
+# permissions for end users to edit modelaccuracies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: modelaccuracy-editor-role
+rules:
+- apiGroups:
+  - ai.ifontlabs.com
+  resources:
+  - modelaccuracies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ai.ifontlabs.com
+  resources:
+  - modelaccuracies/status
+  verbs:
+  - get

@@ -1,3 +1,7 @@
 domain: ifontlabs.com
 repo: github.com/okd-apps/opa-cr-applier
+resources:
+- group: ai
+  kind: ModelAccuracy
+  version: v1alpha1
 version: "2"

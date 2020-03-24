@@ -1,0 +1,20 @@
+# permissions for end users to view modelaccuracies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: modelaccuracy-viewer-role
+rules:
+- apiGroups:
+  - ai.ifontlabs.com
+  resources:
+  - modelaccuracies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ai.ifontlabs.com
+  resources:
+  - modelaccuracies/status
+  verbs:
+  - get
