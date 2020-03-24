@@ -28,8 +28,8 @@ type ModelAccuracySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of ModelAccuracy. Edit ModelAccuracy_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Accuracy of the model represented as a percentage e.g. 80 for 80%.
+	Accuracy int64 `json:"accuracy,omitempty"`
 }
 
 // ModelAccuracyStatus defines the observed state of ModelAccuracy
