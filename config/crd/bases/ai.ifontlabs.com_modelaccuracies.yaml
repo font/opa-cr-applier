@@ -34,10 +34,11 @@ spec:
         spec:
           description: ModelAccuracySpec defines the desired state of ModelAccuracy
           properties:
-            foo:
-              description: Foo is an example field of ModelAccuracy. Edit ModelAccuracy_types.go
-                to remove/update
-              type: string
+            accuracy:
+              description: Accuracy of the model represented as a percentage e.g.
+                80 for 80%.
+              format: int64
+              type: integer
           type: object
         status:
           description: ModelAccuracyStatus defines the observed state of ModelAccuracy
