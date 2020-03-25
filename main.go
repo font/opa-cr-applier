@@ -17,68 +17,97 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"os"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	aiv1alpha1 "github.com/okd-apps/opa-cr-applier/api/v1alpha1"
+	yaml "gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	aiv1alpha1 "github.com/okd-apps/opa-cr-applier/api/v1alpha1"
-	"github.com/okd-apps/opa-cr-applier/controllers"
-	// +kubebuilder:scaffold:imports
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog = ctrl.Log.WithName("main")
 )
 
-func init() {
-	_ = clientgoscheme.AddToScheme(scheme)
-
-	_ = aiv1alpha1.AddToScheme(scheme)
-	// +kubebuilder:scaffold:scheme
-}
+//func init() {
+//	_ = clientgoscheme.AddToScheme(scheme)
+//
+//	_ = aiv1alpha1.AddToScheme(scheme)
+//	// +kubebuilder:scaffold:scheme
+//}
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+	var metricsFile, outputFile string
+	flag.StringVar(&metricsFile, "metrics-file", "", "The file name containing the accuracy metrics of an AI model.")
+	flag.StringVar(&outputFile, "output-file", "", "The file name used to output the AI model custom resource.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "92a2bb36.ifontlabs.com",
-	})
+	if metricsFile == "" {
+		setupLog.Info("Required argument", "metrics-file", metricsFile)
+		os.Exit(1)
+	} else if outputFile == "" {
+		setupLog.Info("Required argument", "output-file", outputFile)
+		os.Exit(1)
+	}
+
+	jsonData, err := ioutil.ReadFile(metricsFile)
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Error reading file", "metrics-file", metricsFile)
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ModelAccuracyReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ModelAccuracy"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ModelAccuracy")
+	var jsonMap map[string]interface{}
+
+	if err := json.Unmarshal(jsonData, &jsonMap); err != nil {
+		setupLog.Error(err, "Error in JSON Unmarshal", "json", jsonData)
 		os.Exit(1)
 	}
-	// +kubebuilder:scaffold:builder
 
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+	accuracy := jsonMap["accuracy"].(float64)
+	fmt.Printf("accuracy = %v\n", accuracy)
+
+	modelAccuracy := &aiv1alpha1.ModelAccuracy{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ModelAccuracy",
+			APIVersion: "ai.ifontlabs.com/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "modelaccuracy-",
+		},
+		Spec: aiv1alpha1.ModelAccuracySpec{
+			Accuracy: int64(accuracy * 100),
+		},
+	}
+	jsonData, err = json.Marshal(modelAccuracy)
+	if err != nil {
+		setupLog.Error(err, "error marshaling into JSON")
+		os.Exit(1)
+	}
+
+	var jsonObj interface{}
+	err = yaml.Unmarshal(jsonData, &jsonObj)
+	if err != nil {
+		setupLog.Error(err, "error in yaml Unmarshal")
+		os.Exit(1)
+	}
+
+	// Marshal this object into YAML.
+	yamlObj, err := yaml.Marshal(jsonObj)
+	if err != nil {
+		setupLog.Error(err, "Error marshalling into YAML")
+		os.Exit(1)
+	}
+	fmt.Printf("%v\n", string(yamlObj))
+	err = ioutil.WriteFile(outputFile, yamlObj, 0644)
+	if err != nil {
+		setupLog.Error(err, "Error writing YAML object to file", "output-file", outputFile, "yaml", yamlObj)
 		os.Exit(1)
 	}
 }
