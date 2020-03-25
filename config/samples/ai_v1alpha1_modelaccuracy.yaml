@@ -4,4 +4,4 @@ metadata:
   name: modelaccuracy-sample
 spec:
   # Add fields here
-  foo: bar
+  accuracy: 80
