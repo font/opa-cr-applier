@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= opa-cr-applier:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -11,15 +11,15 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: manager
+all: opa-cr-applier
 
 # Run tests
 test: generate fmt vet manifests
 	go test ./... -coverprofile cover.out
 
-# Build manager binary
-manager: generate fmt vet
-	go build -o bin/manager main.go
+# Build opa-cr-applier binary
+opa-cr-applier: generate fmt vet
+	go build -o bin/opa-cr-applier main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
@@ -54,13 +54,13 @@ vet:
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-# Build the docker image
-docker-build: test
-	docker build . -t ${IMG}
+# Build the podman image
+podman-build: test
+	podman build . -t ${IMG}
 
-# Push the docker image
-docker-push:
-	docker push ${IMG}
+# Push the podman image
+podman-push:
+	podman push ${IMG}
 
 # find or download controller-gen
 # download controller-gen if necessary
