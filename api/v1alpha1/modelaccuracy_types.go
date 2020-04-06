@@ -28,8 +28,8 @@ type ModelAccuracySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Accuracy of the model represented as a percentage e.g. 80 for 80%.
-	Accuracy int64 `json:"accuracy,omitempty"`
+	// Accuracy of the model as a decimal e.g. 0.9577 for 95.77%.
+	Accuracy string `json:"accuracy,omitempty"`
 }
 
 // ModelAccuracyStatus defines the observed state of ModelAccuracy
